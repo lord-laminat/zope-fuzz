@@ -26,7 +26,7 @@ my_project/
 ├── zope.toml               # Главный конфигурационный файл проекта
 └── ...                     # Ваши харнессы и их зависимости
 ```
-Детально структура проекта описана [здесь](docs\PROJECT_STRUCTURE.md).
+Детально структура проекта описана [здесь](docs/PROJECT_STRUCTURE.md).
 
 ---
 
@@ -59,7 +59,7 @@ language = "python"
 engine = "atheris"
 source = "fuzz_json.py"
 ```
-Детально возможности конфигурации описаны [здесь](docs\CONFIGURATION.md).
+Детально возможности конфигурации описаны [здесь](docs/CONFIGURATION.md).
 
 ---
 
