@@ -17,29 +17,20 @@ var initCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Initializing zope fuzzing environment...")
 
-		// 1. Проверяем, существует ли уже директория .zope
-		if _, err := os.Stat(".zope"); err == nil {
-			fmt.Println("  ├── Internal directory .zope already exists, skipping creation")
-		} else if os.IsNotExist(err) {
-			// Если директории нет, создаем всю структуру системных папок
-			dirsToCreate := []string{
-				filepath.Join(".zope", "build", "context"),
-				filepath.Join(".zope", "targets"),
-				filepath.Join(".zope", "reports"),
-			}
-
-			for _, dir := range dirsToCreate {
-				if err := os.MkdirAll(dir, 0755); err != nil {
-					fmt.Printf("[ERROR] Failed to create directory %s: %v\n", dir, err)
-					os.Exit(1)
-				}
-			}
-			fmt.Println("  ├── Created internal directory structure under .zope/")
-		} else {
-			// Обработка редких системных ошибок доступа к папке
-			fmt.Printf("[ERROR] Failed to check .zope directory: %v\n", err)
-			os.Exit(1)
+		// 1. Ensure the internal .zope directory structure exists
+		dirsToCreate := []string{
+			filepath.Join(".zope", "build", "context"),
+			filepath.Join(".zope", "targets"),
+			filepath.Join(".zope", "reports"),
 		}
+
+		for _, dir := range dirsToCreate {
+			if err := os.MkdirAll(dir, 0755); err != nil {
+				fmt.Printf("[ERROR] Failed to create directory %s: %v\n", dir, err)
+				os.Exit(1)
+			}
+		}
+		fmt.Println("  ├── Ensured internal directory structure under .zope/")
 
 		// 2. Генерируем пустой файл конфигурации zope.toml со ссылкой на документацию
 		configPath := "zope.toml"
