@@ -17,7 +17,7 @@ var RootCmd = &cobra.Command{
 // Execute добавляет дочерние команды к корневой и запускает парсинг флагов CLI
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }

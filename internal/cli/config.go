@@ -18,12 +18,14 @@ var configCmd = &cobra.Command{
 
 		cfg, err := config.LoadConfig("zope.toml")
 		if err != nil {
-			fmt.Printf("[ERROR] Load error: %v\n", err)
+			// Ошибки перенаправляем в Stderr
+			fmt.Fprintf(os.Stderr, "[ERROR] Load error: %v\n", err)
 			os.Exit(1)
 		}
 
 		if err := cfg.Validate(); err != nil {
-			fmt.Printf("[ERROR] Configuration is invalid: %v\n", err)
+			// Ошибки перенаправляем в Stderr
+			fmt.Fprintf(os.Stderr, "[ERROR] Configuration is invalid: %v\n", err)
 			os.Exit(1)
 		}
 

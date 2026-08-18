@@ -62,9 +62,12 @@ type Config struct {
 func LoadConfig(filePath string) (*Config, error) {
 	var cfg Config
 
-	// Проверяем, существует ли файл
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("конфигурационный файл %s не найден", filePath)
+	// Исправлено: обрабатываем любые ошибки os.Stat (не только IsNotExist), включая ошибки доступа
+	if _, err := os.Stat(filePath); err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("конфигурационный файл %s не найден", filePath)
+		}
+		return nil, fmt.Errorf("failed to read configuration file info: %w", err)
 	}
 
 	// Декодируем TOML в нашу структуру
@@ -123,20 +126,27 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("the [project] section must contain a 'name'")
 	}
 
-	// Валидация дефолтных временных интервалов
+	// Исправлено: пробрасываем реальную ошибку компилятора через %w для удобства дебага
 	if c.Defaults.StopConditions.MaxTimeSinceLastPath != "" {
 		if _, err := time.ParseDuration(c.Defaults.StopConditions.MaxTimeSinceLastPath); err != nil {
-			return fmt.Errorf("defaults: invalid max_time_since_last_path format")
+			return fmt.Errorf("defaults: invalid max_time_since_last_path format: %w", err)
 		}
 	}
 	if c.Defaults.StopConditions.MaxTotalTime != "" {
 		if _, err := time.ParseDuration(c.Defaults.StopConditions.MaxTotalTime); err != nil {
-			return fmt.Errorf("defaults: invalid max_total_time format")
+			return fmt.Errorf("defaults: invalid max_total_time format: %w", err)
 		}
 	}
 
 	seenNames := make(map[string]bool)
-	for _, target := range c.Targets {
+	for i, target := range c.Targets {
+		if target.Name == "" {
+			return fmt.Errorf("target at index %d missing required field 'name'", i)
+		}
+		if target.Source == "" {
+			return fmt.Errorf("target '%s' missing required field 'source'", target.Name)
+		}
+
 		if seenNames[target.Name] {
 			return fmt.Errorf("duplicate target name discovered: %s", target.Name)
 		}
@@ -152,7 +162,7 @@ func (c *Config) Validate() error {
 		// Строгая валидация связки Язык-Движок
 		switch target.Language {
 		case "cpp", "c":
-			if !slices.Contains([]string{"afl", "afl++", "libfuzzer"}, target.Engine) {
+			if !slices.Contains([]string{"afl++", "libfuzzer"}, target.Engine) {
 				return fmt.Errorf("target %s: C/C++ language is incompatible with engine '%s' (allowed: afl++, libfuzzer)", target.Name, target.Engine)
 			}
 		case "python":
@@ -172,12 +182,12 @@ func (c *Config) Validate() error {
 		// Валидация времени условий останова
 		if target.StopConditions.MaxTimeSinceLastPath != "" {
 			if _, err := time.ParseDuration(target.StopConditions.MaxTimeSinceLastPath); err != nil {
-				return fmt.Errorf("target %s: invalid max_time_since_last_path format", target.Name)
+				return fmt.Errorf("target %s: invalid max_time_since_last_path format: %w", target.Name, err)
 			}
 		}
 		if target.StopConditions.MaxTotalTime != "" {
 			if _, err := time.ParseDuration(target.StopConditions.MaxTotalTime); err != nil {
-				return fmt.Errorf("target %s: invalid max_total_time format", target.Name)
+				return fmt.Errorf("target %s: invalid max_total_time format: %w", target.Name, err)
 			}
 		}
 	}
